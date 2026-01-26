@@ -1,0 +1,91 @@
+version: "3.8"
+
+services:
+  # -----------------------------
+  # SPIRE Infrastructure
+  # -----------------------------
+  spire-server:
+    image: ghcr.io/spiffe/spire-server:1.10.1
+    container_name: spire-server
+    user: "0:0"
+    command: [ "-config", "/run/spire/conf/server/server.conf" ]
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./conf/server:/run/spire/conf/server
+      - ./run/spire/data:/run/spire/data
+      - spire-server-socket:/tmp/spire-server/private
+
+  spire-agent:
+    image: ghcr.io/spiffe/spire-agent:1.10.1
+    container_name: spire-agent
+    user: "0:0"
+    pid: "host"
+    privileged: true # Required for Docker Workload Attestor
+    depends_on:
+      - spire-server
+    command: [ "-config", "/run/spire/conf/agent/agent.conf", "-joinToken", "a8bdb53a-68af-4a60-a64e-5906369c5d5f" ]
+    volumes:
+      - ./conf/agent:/run/spire/conf/agent
+      - ./run/spire/data/agent:/run/spire/data/agent
+      - /var/run/docker.sock:/var/run/docker.sock
+      - shared-sockets:/run/spire/sockets
+      - spire-server-socket:/tmp/spire-server/private
+
+  # -----------------------------
+  # AI Workloads (Agents)
+  # -----------------------------
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.agent
+    container_name: frontend-app
+    user: "10001:10001"
+    environment:
+      - SPIFFE_ENDPOINT_SOCKET=unix:///run/spire/sockets/agent.sock
+      - SERVICE_NAME=frontend
+    entrypoint: [ "streamlit", "run", "src/frontend/app.py", "--server.port=8501", "--server.address=0.0.0.0" ]
+    ports:
+      - "8501:8501"
+    volumes:
+      - shared-sockets:/run/spire/sockets
+    depends_on:
+      - spire-agent
+      - researcher
+      - writer
+
+  researcher:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.agent
+    container_name: research-agent
+    user: "10001:10001"
+    env_file: .env
+    environment:
+      - SPIFFE_ENDPOINT_SOCKET=unix:///run/spire/sockets/agent.sock
+      - SERVICE_NAME=researcher
+    entrypoint: [ "python", "src/agents/researcher.py" ]
+    volumes:
+      - shared-sockets:/run/spire/sockets
+    depends_on:
+      - spire-agent
+
+  writer:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.agent
+    container_name: writer-agent
+    user: "10001:10001"
+    env_file: .env
+    environment:
+      - SPIFFE_ENDPOINT_SOCKET=unix:///run/spire/sockets/agent.sock
+      - SERVICE_NAME=writer
+    entrypoint: [ "python", "src/agents/writer.py" ]
+    volumes:
+      - shared-sockets:/run/spire/sockets
+    depends_on:
+      - spire-agent
+
+volumes:
+  spire-server-socket:
+  shared-sockets:

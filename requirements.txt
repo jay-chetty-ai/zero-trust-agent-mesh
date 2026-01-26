@@ -1,0 +1,15 @@
+# Core Identity
+spiffe>=0.2.0
+
+# Server & Client
+aiohttp
+streamlit
+
+# APIs
+tavily-python
+
+# Utilities
+authlib
+langchain_community
+langchain_core
+cryptography
