@@ -5,7 +5,6 @@ from aiohttp import web
 from src.common.server import AgentServer
 
 # Configure Logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("researcher-agent")
 
 import os 
@@ -28,11 +27,12 @@ except Exception as e:
     search_tool = None
 
 @server.routes.post('/ask')
-@server.require_identity(allowed_ids=ALLOWED_CALLERS)
+@server.require_user_context(allowed_callers=ALLOWED_CALLERS)
 async def ask_agent(request):
     data = await request.json()
     query = data.get('query')
-    user_id = data.get('user_id', 'unknown')
+    user_context = request.get('user_context')
+    user_id = user_context.get('sub')
     caller_id = request.get('caller_id')
     
     logger.info(f"RESEARCH REQUEST | Caller: {caller_id} | User: {user_id} | Query: {query}")
@@ -56,31 +56,33 @@ async def ask_agent(request):
             "original_user": user_id
         }
         
-        # Identity Propagation: We use OUR SVID (researcher) to call Writer.
-        # Writer must authorize US.
+        # Identity Propagation: We use OUR SVID (researcher) to call Writer,
+        # BUT we MUST forward the User's JWT (Bearer token) to satisfy Writer's requirement.
+        headers = {
+            "Authorization": request.headers.get("Authorization")
+        }
         
         # Get Client SSL Context
         ssl_context = server.spiffe.get_client_ssl_context()
         
-        logger.info(f"Calling Writer Agent at {writer_url}...")
+        logger.info(f"Calling Writer Agent at {writer_url} with User Context...")
         async with aiohttp.ClientSession() as session:
-            async with session.post(writer_url, json=writer_payload, ssl=ssl_context) as resp:
+            async with session.post(writer_url, json=writer_payload, ssl=ssl_context, headers=headers) as resp:
                 if resp.status == 200:
                     writer_resp = await resp.json()
-                    final_article = writer_resp.get("result")
-                    verified_writer = "spiffe://example.org/ns/agents/sa/writer" # Implicit trust if connection worked? 
-                    # Ideally we validate the server cert too if we want strict mutual authn check in app logic
-                    # but pyspiffe context handles validation.
+                    # writer_resp is now { "status": "success", "content": { "result": "..." }, "signature": "..." }
+                    final_article = writer_resp.get("content", {}).get("result")
+                    writer_signature = writer_resp.get("signature")
                 else:
                     error_text = await resp.text()
                     logger.error(f"Writer call failed: {resp.status} - {error_text}")
                     final_article = f"Error generating article. Search results: {search_results[:200]}..."
 
-        return web.json_response({
-            "status": "success",
+        return web.json_response(server.sign_response({
             "answer": final_article,
-            "verified_caller": caller_id # To show frontend we accepted them
-        })
+            "writer_signature": writer_signature if 'writer_signature' in locals() else None,
+            "verified_caller": caller_id
+        }))
         
     except Exception as e:
         logger.error(f"Error during research: {e}")

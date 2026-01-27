@@ -6,40 +6,33 @@ SERVER_CONTAINER="spire-server"
 
 echo "Creating Registration Entries..."
 
-# 1. SPIRE Agent
-# It needs to attest the NODE itself. 
-docker exec $SERVER_CONTAINER /opt/spire/bin/spire-server entry create \
-    -spiffeID spiffe://example.org/ns/spire/sa/agent \
-    -selector k8s:ns:default \
-    -node
+# Helper function to create entry only if it doesn't exist
+create_entry() {
+    local parent_id=$1
+    local spiffe_id=$2
+    local selector_service=$3
+    
+    # Check if entry exists
+    if docker exec $SERVER_CONTAINER /opt/spire/bin/spire-server entry show -spiffeID "$spiffe_id" > /dev/null 2>&1; then
+        echo "Entry for $spiffe_id already exists. Skipping."
+    else
+        echo "Creating entry for $spiffe_id..."
+        docker exec $SERVER_CONTAINER /opt/spire/bin/spire-server entry create \
+            -parentID "$parent_id" \
+            -spiffeID "$spiffe_id" \
+            -selector docker:label:com.docker.compose.service:"$selector_service" \
+            -selector docker:label:com.docker.compose.project:spiffe-spire-demo
+    fi
+}
 
-# Wait for node attestation is tricky in a script without loop, 
-# for Docker Compose we usually use "join_token" for the agent so we don't need a Node entry if we did it that way?
-# Ah, I configured "join_token" in server.conf.
-# But for Workloads, we need entries that map to the Agent's Node ID.
-# For simplicity in this demo, we will use a loose parent ID or rely on the fact that with join_token, the agent gets a generic ID.
+# We do NOT need to create the Node entry manually when using join tokens in this configuration,
+# or if we do, it should match the token generation. 
+# However, for this demo, the Agent has already joined and has the ID 'spiffe://example.org/ns/spire/sa/agent'.
+# We just need to register the workloads under that Parent ID.
 
-# Let's register the workloads:
+# Register Workloads
+create_entry "spiffe://example.org/ns/spire/sa/agent" "spiffe://example.org/ns/ui/sa/frontend" "frontend"
+create_entry "spiffe://example.org/ns/spire/sa/agent" "spiffe://example.org/ns/agents/sa/researcher" "researcher"
+create_entry "spiffe://example.org/ns/spire/sa/agent" "spiffe://example.org/ns/agents/sa/writer" "writer"
 
-# Frontend
-docker exec $SERVER_CONTAINER /opt/spire/bin/spire-server entry create \
-    -parentID spiffe://example.org/ns/spire/sa/agent \
-    -spiffeID spiffe://example.org/ns/ui/sa/frontend \
-    -selector docker:label:com.docker.compose.service:frontend \
-    -selector docker:label:com.docker.compose.project:spiffe-spire-demo
-
-# Researcher
-docker exec $SERVER_CONTAINER /opt/spire/bin/spire-server entry create \
-    -parentID spiffe://example.org/ns/spire/sa/agent \
-    -spiffeID spiffe://example.org/ns/agents/sa/researcher \
-    -selector docker:label:com.docker.compose.service:researcher \
-    -selector docker:label:com.docker.compose.project:spiffe-spire-demo
-
-# Writer
-docker exec $SERVER_CONTAINER /opt/spire/bin/spire-server entry create \
-    -parentID spiffe://example.org/ns/spire/sa/agent \
-    -spiffeID spiffe://example.org/ns/agents/sa/writer \
-    -selector docker:label:com.docker.compose.service:writer \
-    -selector docker:label:com.docker.compose.project:spiffe-spire-demo
-
-echo "Entries Created Successfully."
+echo "Registration Complete."

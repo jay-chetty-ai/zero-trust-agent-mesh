@@ -24,7 +24,7 @@ services:
     privileged: true # Required for Docker Workload Attestor
     depends_on:
       - spire-server
-    command: [ "-config", "/run/spire/conf/agent/agent.conf", "-joinToken", "a8bdb53a-68af-4a60-a64e-5906369c5d5f" ]
+    command: [ "-config", "/run/spire/conf/agent/agent.conf", "-joinToken", "79f7dac6-f794-42ac-b98b-5a133bd2c278" ]
     volumes:
       - ./conf/agent:/run/spire/conf/agent
       - ./run/spire/data/agent:/run/spire/data/agent
@@ -44,10 +44,12 @@ services:
     environment:
       - SPIFFE_ENDPOINT_SOCKET=unix:///run/spire/sockets/agent.sock
       - SERVICE_NAME=frontend
-    entrypoint: [ "streamlit", "run", "src/frontend/app.py", "--server.port=8501", "--server.address=0.0.0.0" ]
+    entrypoint: [ "sh", "src/frontend/start.sh" ]
     ports:
       - "8501:8501"
     volumes:
+      - ./src:/app/src
+      - ./.streamlit:/app/.streamlit
       - shared-sockets:/run/spire/sockets
     depends_on:
       - spire-agent
@@ -66,6 +68,7 @@ services:
       - SERVICE_NAME=researcher
     entrypoint: [ "python", "src/agents/researcher.py" ]
     volumes:
+      - ./src:/app/src
       - shared-sockets:/run/spire/sockets
     depends_on:
       - spire-agent
@@ -82,6 +85,7 @@ services:
       - SERVICE_NAME=writer
     entrypoint: [ "python", "src/agents/writer.py" ]
     volumes:
+      - ./src:/app/src
       - shared-sockets:/run/spire/sockets
     depends_on:
       - spire-agent

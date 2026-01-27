@@ -3,7 +3,6 @@ import aiohttp
 from aiohttp import web
 from src.common.server import AgentServer
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("writer-agent")
 
 import os
@@ -27,13 +26,15 @@ else:
     logger.error("GOOGLE_API_KEY NOT FOUND in environment!")
 
 @server.routes.post('/process')
-@server.require_identity(allowed_ids=ALLOWED_CALLERS)
+@server.require_user_context(allowed_callers=ALLOWED_CALLERS)
 async def process_content(request):
     data = await request.json()
     content = data.get('content')
     caller_id = request.get('caller_id')
+    user_context = request.get('user_context')
+    user_id = user_context.get('sub')
     
-    logger.info(f"Writer Request from {caller_id}")
+    logger.info(f"Writer Request from {caller_id} for User {user_id}")
     
     if not GEMINI_API_KEY:
          return web.json_response({"status": "error", "message": "Writer API Key not configured."})
@@ -74,10 +75,9 @@ async def process_content(request):
                     try:
                         article = resp_json['candidates'][0]['content']['parts'][0]['text']
                         logger.info("Writing Complete.")
-                        return web.json_response({
-                            "status": "success",
+                        return web.json_response(server.sign_response({
                             "result": article
-                        })
+                        }))
                     except (KeyError, IndexError) as e:
                         logger.error(f"Malformed Gemini response: {resp_json}")
                         return web.json_response({"status": "error", "message": "Refused to generate or malformed response"})

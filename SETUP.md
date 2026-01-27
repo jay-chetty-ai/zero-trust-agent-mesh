@@ -42,6 +42,8 @@
     SPIRE Server needs to know which containers are authorized to get which identities. Run the registration script inside the server container:
     ```bash
     docker-compose exec spire-server sh /run/spire/registration/entries.sh
+    # OR if running from host with updated script:
+    # bash conf/registration/entries.sh
     ```
     *This script creates registration entries mapping Docker labels (like `com.docker.compose.service=researcher`) to SPIFFE IDs.*
 

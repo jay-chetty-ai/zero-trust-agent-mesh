@@ -15,8 +15,8 @@ graph TD
         subgraph "Workloads (Docker Containers)"
             User((Human User)) -- Mock OAuth --> UI[Frontend Service]
             
-            UI -- mTLS (SVID) --> RA[Researcher Agent]
-            RA -- mTLS (SVID) --> WA[Writer Agent]
+            UI -- mTLS (SVID + Trace Context) --> RA[Researcher Agent]
+            RA -- mTLS (SVID + Trace Context) --> WA[Writer Agent]
             
             WA -- HTTPS (API Key) --> Gemini[Google Gemini API]
             RA -- HTTPS (API Key) --> Tavily[Tavily Search API]
@@ -25,6 +25,12 @@ graph TD
             SA -- Workload API (UDS) --> RA
             SA -- Workload API (UDS) --> WA
         end
+    end
+    
+    subgraph "Observability & Security"
+        UI -.-> Dashboard[Security Dashboard]
+        Dashboard -.-> Tracing[Distributed Tracing OTEL]
+        Dashboard -.-> JWS[JWS Response Signing]
     end
     
     style SS fill:#f9f,stroke:#333
@@ -60,17 +66,14 @@ Registration entries compel the workload to match:
 
 **Trust Policy**:
 *   **Researcher**: Authorized to be called by `frontend`.
-*   **Writer**: Authorized to be called by `researcher`.
+*   **Writer**: Authorized to be called by `researcher` and `frontend`.
 
-### 3. Authentication & Communication Flow (A2A over mTLS)
-1.  **Workload Startup**: When a container starts, it fetches its SVID from the SPIRE Agent.
-2.  **Communication**: Services use `aiohttp` with a custom SSL context derived from their SVID.
-3.  **Transport Security (mTLS)**:
-    *   **Mutual Auth**: The server requests the client's certificate. The client presents its SVID.
-    *   Each side validates the other's SVID against the Trust Domain bundle.
-4.  **Authorization**:
-    *   The `AgentServer` decorator `@require_identity` checks the SPIFFE ID of the caller.
-    *   If the ID is not in `ALLOWED_CALLERS`, the request is rejected with a 403.
+### 3. A2A Communication (The Secure Mesh)
+Communication between agents is secured via:
+1.  **Transport Security (mTLS)**: Mutual authentication using SPIFFE SVIDs.
+2.  **Authorization**: Strict validation of the caller's SPIFFE ID via the `@require_identity` decorator.
+3.  **Observability (OTEL)**: Automatic propagation of **W3C TraceContext** headers via OpenTelemetry, linking requests across the mesh.
+4.  **Content Integrity (Response Signing)**: Agents sign their responses using their SVID private keys (**JWS**). The Frontend validates these signatures to ensure AI output hasn't been tampered with in transit.
 
 ### 4. Human Authentication & The Trusted Boundary
 The **Frontend App** acts as the **Security Gateway** between the Human world and the Machine/SPIFFE world.
@@ -80,11 +83,23 @@ The **Frontend App** acts as the **Security Gateway** between the Human world an
 *   **SPIFFE**: Authenticates the **Frontend** to the Backend Agents.
 *   **Identity Propagation**: The Frontend includes user metadata in the JSON payload. Agents trust this assertion because they trust the Frontend's SVID.
 
-### 5. Technology Stack
-*   **Language**: Python 3.10+
-*   **Web Framework**: `aiohttp` (Async Server & Client)
-*   **AI Models**: 
-    *   **Gemini 2.0 Flash**: Content generation (direct REST API).
-    *   **Tavily**: Real-time web search.
-*   **Identity**: SPIFFE/SPIRE (via custom gRPC Workload API client).
-*   **Infrastructure**: Docker & Docker Compose.
+### 5. Frontend & Security Dashboard
+The **Frontend App** acts as the **Security Gateway** and provides a real-time **Security Inspector** for deep mesh observability.
+
+**Key Features:**
+*   **Machine Identity**: Shows the verified SPIFFE ID of the frontend.
+*   **Human Identity**: Decodes the RSA-256 signed JWT used for user context.
+*   **Distributed Tracing**: Displays the active `trace_id` propagated across agents.
+*   **Content Integrity**: Validates the cryptographic signatures of the Researcher and Writer agents.
+
+### 7. Attack Simulation & Verification
+A dedicated attack script (`src/attack_simulation.py`) runs inside the mesh to prove the efficacy of the Zero Trust controls. It attempts:
+1.  **Identity Stripping**: Using a valid SVID but removing the User JWT (Result: `401`).
+2.  **Impersonation**: Signing a JWT with an untrusted private key (Result: `401`).
+
+### 6. Technology Stack
+*   **Language**: Python 3.11
+*   **Web Framework**: `aiohttp` (Server & Client), `Streamlit` (UI)
+*   **Observability**: OpenTelemetry SDKs (Auto-instrumented)
+*   **Security**: SPIFFE/SPIRE, JSON Web Signature (JWS), JWT
+*   **AI Models**: Gemini 2.0 Flash, Tavily Search

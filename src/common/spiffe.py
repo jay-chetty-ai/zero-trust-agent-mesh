@@ -151,8 +151,45 @@ class SpiffeHelper:
             ))
             
         context.load_cert_chain(certfile=cert_path, keyfile=key_path)
-
         return context
+
+    def get_private_key(self):
+        """Returns the current SVID private key object."""
+        if not self._initialized: self.start()
+        return self.source.svid.private_key
+
+    def get_x509_algorithm(self) -> str:
+        """Returns the JWS algorithm name (RS256, ES256, etc.) for the current SVID."""
+        if not self._initialized: self.start()
+        from cryptography.hazmat.primitives.asymmetric import ec, rsa
+        key = self.source.svid.private_key
+        if isinstance(key, rsa.RSAPrivateKey):
+            return "RS256"
+        if isinstance(key, ec.EllipticCurvePrivateKey):
+            return "ES256"
+        return "RS256"
+
+    def get_private_key_pem(self) -> str:
+        """Returns the current SVID private key in PEM format."""
+        if not self._initialized: self.start()
+        return self.source.svid.private_key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption()
+        ).decode()
+
+    def get_cert_chain_pems(self) -> list[str]:
+        """Returns the current SVID certificate chain as a list of PEM strings."""
+        if not self._initialized: self.start()
+        return [
+            cert.public_bytes(serialization.Encoding.PEM).decode()
+            for cert in self.source.svid.cert_chain
+        ]
+
+    def get_spiffe_id(self) -> str:
+        """Returns the current SPIFFE ID."""
+        if not self._initialized: self.start()
+        return str(self.source.svid.spiffe_id)
 
     def validate_spiffe_id(self, peercert, expected_spiffe_id=None, allowed_spiffe_ids=None):
         """

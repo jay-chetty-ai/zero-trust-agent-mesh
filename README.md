@@ -11,6 +11,7 @@ This project implements a multi-agent system where Python AI agents run as indep
     *   **Researcher**: Uses Tavily Search to gather information based on user queries.
     *   **Writer**: Generates structured content (blog posts) using the **Gemini 2.0 Flash** model via direct REST API integration.
 *   **Secure Orchestration**: A frontend application coordinates the workflow, bridging Human Auth (Mock OAuth) to Machine Auth (SPIFFE).
+*   **Security Inspector (Dashboard)**: Real-time UI for monitoring SPIFFE SVIDs, JWT User Context, OTEL Trace IDs, and JWS Content Integrity.
 *   **A2A Security**: Strict SPIFFE ID validation at every hop (Frontend → Researcher → Writer).
 *   **Local Simulation**: Full SPIFFE infrastructure runs locally on Linux using Docker Compose.
 

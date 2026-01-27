@@ -7,8 +7,8 @@ This document serves as the master blueprint for the Zero Trust AI Agent Mesh. I
 ## 🟢 Category: Observability & Resilience (The "Reliable Mesh")
 *Focus: Traceability, health monitoring, and error handling.*
 
-- [ ] **Correlation IDs**: Implement a unique `X-Correlation-ID` generated at the Frontend and propagated through all agent hops (Researcher → Writer) for distributed tracing.
-- [ ] **Structured Identity Logging**: Standardize JSON logs in the `AgentServer` to include validated **Caller SPIFFE ID**, **User ID**, and request metadata.
+- [x] **Distributed Tracing (OTEL)**: Implement standardized W3C `traceparent` propagation using OpenTelemetry SDKs, linking user actions across all agent hops.
+- [x] **Structured Identity Logging**: Standardize JSON logs in the `AgentServer` to include validated **Caller SPIFFE ID**, **User ID**, and request metadata.
 - [ ] **mTLS Forensics**: Log peer certificate serial numbers and SVID expiration dates during the TLS handshake to aid in security audits.
 - [ ] **Comprehensive Health Checks**: Expand the `/health` endpoint to include SPIRE socket status and external API connectivity (Gemini/Tavily).
 - [ ] **Reliability Patterns**: Implement exponential backoff retries and circuit breakers for all inter-agent and external API communication.
@@ -17,9 +17,9 @@ This document serves as the master blueprint for the Zero Trust AI Agent Mesh. I
 *Focus: Cryptographic hardening and secret management.*
 
 - [ ] **Secret-less API Access**: Integrate with a Secret Provider (e.g., HashiCorp Vault) using SPIFFE Auth to retrieve short-lived API keys, eliminating static `.env` secrets.
-- [ ] **Cryptographic Response Signing**: Use the Agent's SVID private key to sign AI-generated content (JWS). The Frontend validates the signature to ensure content integrity.
+- [x] **Cryptographic Response Signing**: Use the Agent's SVID private key to sign AI-generated content (JWS). The Frontend validates the signature to ensure content integrity.
 - [ ] **Egress Filtering / Domain Pinning**: Use a SPIFFE-aware proxy (like Envoy) to restrict agents' outbound traffic strictly to approved API domains.
-- [ ] **User-Contextual Authorization**: Propagate a scoped User JWT. Agents validate that the calling service (e.g., Researcher) has delegated authority for that specific human user.
+- [x] **User-Contextual Authorization**: Propagate a scoped User JWT. Agents validate that the calling service (e.g., Researcher) has delegated authority for that specific human user.
 - [ ] **Automated Data Guardrails**: Implement a security interceptor to scan prompts and responses for PII (Personally Identifiable Information) or accidental secret leakage.
 
 ## 📜 Category: Policy & Governance (The "Rules of Engagement")
@@ -44,10 +44,12 @@ This document serves as the master blueprint for the Zero Trust AI Agent Mesh. I
 | :--- | :--- | :--- | :--- | :--- |
 | **mTLS Handshake** | Security | ✅ Done | Phase 1 | Foundation for all A2A. |
 | **A2A Authorization** | Policy | ✅ Done | Phase 2 | Basic SPIFFE ID validation. |
+| **User Context Propagation** | Security | ✅ Done | Phase 3 | RSA-signed JWTs + JWKS sidecar. |
 | **Gemini REST API** | Workflow | ✅ Done | Phase 2 | Bypassed SDK 404 issues. |
-| **Correlation IDs** | Observability | ⏳ Next | Phase 3 | |
+| **Distributed Tracing** | Observability | ✅ Done | Phase 3 | Using OpenTelemetry SDK. |
 | **Secret-less Vault Access** | Security | 📅 Planned | Phase 3 | |
-| **Response Signing** | Security | 📅 Planned | Phase 4 | |
+| **Response Signing** | Security | ✅ Done | Phase 4 | JWS with SVID Private Keys. |
+| **Security Inspector UI** | Observability | ✅ Done | Phase 4 | Real-time Identity & Integrity visualizer. |
 
 ---
-*Last Updated: 2026-01-26*
+*Last Updated: 2026-01-27 (Phase 3 & 4 Complete)*
