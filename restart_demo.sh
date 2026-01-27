@@ -14,6 +14,9 @@ docker compose up -d spire-server
 echo "⏳ Waiting 5 seconds for SPIRE Server to initialize..."
 sleep 5
 
+echo "🔄 Fetching new Trust Bundle..."
+docker exec spire-server /opt/spire/bin/spire-server bundle show > conf/agent/bootstrap.crt
+
 echo "🔑 Generating new Join Token..."
 # Extract the token (second word of the output: "Token: <value>")
 TOKEN=$(docker exec spire-server /opt/spire/bin/spire-server token generate -spiffeID spiffe://example.org/ns/spire/sa/agent | awk '{print $2}')

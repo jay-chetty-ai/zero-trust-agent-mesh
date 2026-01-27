@@ -21,6 +21,11 @@ This document serves as the master blueprint for the Zero Trust AI Agent Mesh. I
 - [ ] **Egress Filtering / Domain Pinning**: Use a SPIFFE-aware proxy (like Envoy) to restrict agents' outbound traffic strictly to approved API domains.
 - [x] **User-Contextual Authorization**: Propagate a scoped User JWT. Agents validate that the calling service (e.g., Researcher) has delegated authority for that specific human user.
 - [ ] **Automated Data Guardrails**: Implement a security interceptor to scan prompts and responses for PII (Personally Identifiable Information) or accidental secret leakage.
+- [ ] **Supply Chain Security (Sigstore/Cosign):** Implement cryptographically verified workload identity.
+  - **Tooling:** Use `cosign` to sign container images with a private key during the build process.
+  - **CI/CD:** Integrate signing into the build pipeline and push signatures to a local/remote registry.
+  - **SPIRE:** Configure the `docker` Workload Attestor with the **Sigstore** plugin to verify signatures against a trusted public key.
+  - **Policy:** Update registration entries to use signature-based selectors (e.g., `docker:sigstore:validation:passed:true`), replacing runtime image hash checks.
 
 ## 📜 Category: Policy & Governance (The "Rules of Engagement")
 *Focus: Flexible authorization and identity bridging.*
@@ -49,6 +54,7 @@ This document serves as the master blueprint for the Zero Trust AI Agent Mesh. I
 | **Distributed Tracing** | Observability | ✅ Done | Phase 3 | Using OpenTelemetry SDK. |
 | **Secret-less Vault Access** | Security | 📅 Planned | Phase 3 | |
 | **Response Signing** | Security | ✅ Done | Phase 4 | JWS with SVID Private Keys. |
+| **Supply Chain Security** | Security | 📅 Planned | Future | Sigstore/Cosign integration. |
 | **Security Inspector UI** | Observability | ✅ Done | Phase 4 | Real-time Identity & Integrity visualizer. |
 
 ---
