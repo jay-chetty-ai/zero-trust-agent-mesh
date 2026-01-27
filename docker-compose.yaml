@@ -24,7 +24,7 @@ services:
     privileged: true # Required for Docker Workload Attestor
     depends_on:
       - spire-server
-    command: [ "-config", "/run/spire/conf/agent/agent.conf", "-joinToken", "79f7dac6-f794-42ac-b98b-5a133bd2c278" ]
+    command: [ "-config", "/run/spire/conf/agent/agent.conf", "-joinToken", "${SPIRE_JOIN_TOKEN}" ]
     volumes:
       - ./conf/agent:/run/spire/conf/agent
       - ./run/spire/data/agent:/run/spire/data/agent
