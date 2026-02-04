@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# Default env var to suppress warning during 'down'
+export SPIRE_JOIN_TOKEN=""
+
 echo "🛑 Stopping all services..."
 docker compose down
 
