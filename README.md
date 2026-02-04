@@ -1,4 +1,4 @@
-# SPIFFE/SPIRE AI Agent Demo
+# Zero Trust Agent Mesh
 
 A secure, agentic AI application demonstrating **Zero Trust** principles using **SPIFFE** (Secure Production Identity Framework for Everyone) and **SPIRE**.
 

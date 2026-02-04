@@ -12,7 +12,7 @@
 1.  **Clone the repository** (if you haven't already):
     ```bash
     git clone <repo-url>
-    cd spiffe-spire-demo
+    cd zero-trust-agent-mesh
     ```
 
 2.  **Environment Variables**:

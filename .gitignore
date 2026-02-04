@@ -1,7 +1,42 @@
+# Environment Variables and Secrets
 .env
-run/
+.env.*
+!.env.example
+
+# Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+
+# Jupyter
 .ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
+
+# Agent Workspaces
 .agent/
+
+# Project Specific Runtime Artifacts & generated files
+run/
+conf/agent/bootstrap.crt
 bundle.pem/
+*.log
+*.sqlite3
+dumb-init
+
+# Backup of dev scripts
+backup/

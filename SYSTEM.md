@@ -53,7 +53,7 @@ We utilize the **SPIRE Docker Workload Attestor** to verify container identities
 
 **Verification Selectors:**
 Registration entries compel the workload to match:
-1.  **Project Label**: `docker:label:com.docker.compose.project=spiffe-spire-demo`
+1.  **Project Label**: `docker:label:com.docker.compose.project=zero-trust-agent-mesh`
 2.  **Service Label**: `docker:label:com.docker.compose.service=<service-name>`
 
 **Identity Mapping:**
