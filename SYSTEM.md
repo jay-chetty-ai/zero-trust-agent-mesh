@@ -33,13 +33,17 @@ graph TD
         Dashboard -.-> JWS[JWS Response Signing]
     end
     
-    style SS fill:#f9f,stroke:#333
-    style SA fill:#bbf,stroke:#333
-    style UI fill:#dfd,stroke:#333
-    style RA fill:#dfd,stroke:#333
-    style WA fill:#dfd,stroke:#333
-    style Gemini fill:#f96,stroke:#333
-    style Tavily fill:#f96,stroke:#333
+    style SS fill:#7B2D8E,stroke:#4A1A54,stroke-width:2px,color:#FFFFFF
+    style SA fill:#1A5276,stroke:#0E2F44,stroke-width:2px,color:#FFFFFF
+    style UI fill:#1E8449,stroke:#145A32,stroke-width:2px,color:#FFFFFF
+    style RA fill:#1E8449,stroke:#145A32,stroke-width:2px,color:#FFFFFF
+    style WA fill:#1E8449,stroke:#145A32,stroke-width:2px,color:#FFFFFF
+    style Gemini fill:#C0392B,stroke:#922B21,stroke-width:2px,color:#FFFFFF
+    style Tavily fill:#C0392B,stroke:#922B21,stroke-width:2px,color:#FFFFFF
+    style Dashboard fill:#2C3E50,stroke:#1A252F,stroke-width:2px,color:#FFFFFF
+    style Tracing fill:#2C3E50,stroke:#1A252F,stroke-width:2px,color:#FFFFFF
+    style JWS fill:#2C3E50,stroke:#1A252F,stroke-width:2px,color:#FFFFFF
+    style User fill:#D4AC0D,stroke:#9A7D0A,stroke-width:2px,color:#000000
 ```
 
 ## Key Components
